@@ -82,7 +82,7 @@ function mu_a = get_mu_a_muscle(lambda_nm_array)
     end
 end
 
-% 新增：血管层吸收系数 (主要基于血液吸收)
+
 function mu_a = get_mu_a_vessel(lambda_nm_array)
     mu_a = zeros(size(lambda_nm_array));
     % 示例: 简化血液吸收模型 (血红蛋白吸收峰在蓝绿光区和近红外Q谷)
@@ -90,9 +90,7 @@ function mu_a = get_mu_a_vessel(lambda_nm_array)
     mu_a_green_blood = 30.0; % cm^-1 at 550nm (Q band 附近) - 简化
     mu_a_red_blood = 10.0;  % cm^-1 at 635nm (相对较低) - 简化
     mu_a_nir_blood = 5.0;   % cm^-1 at 750nm (更低) - 简化
-    
-    % 使用分段线性插值或更复杂的模型
-    % 这里用非常简化的分段模型
+
     for i = 1:length(lambda_nm_array)
         lambda = lambda_nm_array(i);
         if lambda <= 450
@@ -137,7 +135,7 @@ mu_a_vessel_values = get_mu_a_vessel(wavelengths_nm);
 transmittance_vessel = exp(-mu_a_vessel_values .* thickness_vessel);
 spectrum_exiting_vessel = spectrum_entering_vessel .* transmittance_vessel; % 穿出血管的光谱
 
-% --- 5. 绘制光谱图 (图 1) ---
+
 figure(1); 
 set(gcf, 'Name', 'LED光谱在多层组织中的衰减分析', 'Position', [50, 50, 800, 600]);
 plot(wavelengths_nm, spectrum_after_led_surface, 'k-', 'LineWidth', 2, 'DisplayName', 'LED出射');
@@ -156,7 +154,7 @@ current_ylim = ylim; ylim([0, current_ylim(2) * 1.1]);
 legend('show', 'Location', 'northeast', 'FontSize', 10); legend('boxoff');
 hold off;
 
-% --- 6. 分析并输出到达血管的光强 ---
+
 fprintf('--- LED光在多层组织中衰减分析结果 ---\n');
 total_intensity_led_surface = trapz(wavelengths_nm, spectrum_after_led_surface);
 total_intensity_after_air = trapz(wavelengths_nm, spectrum_after_air);
@@ -183,19 +181,17 @@ fprintf('在 %.0fnm (蓝光峰值) 进入血管的光强: %.4e\n', peak_waveleng
 fprintf('在 %.0fnm (红光峰值) 穿出血管的光强: %.4e\n', peak_wavelength_red_nm, intensity_red_exiting_vessel);
 fprintf('在 %.0fnm (蓝光峰值) 穿出血管的光强: %.4e\n', peak_wavelength_blue_nm, intensity_blue_exiting_vessel);
 
-% --- 7. 3D 可视化 LED 模型、组织层和分层粒子云 (图 2) ---
 figure(2); 
 set(gcf, 'Name', 'LED发光及组织层3D模拟图 (分层粒子云与体积渲染)', 'Position', [900, 50, 850, 750]);
 clf; 
 
-% 7.1 绘制LED主体
+
 hl_led = led_length / 2; hw_led = led_width / 2; hh_led_device = led_height; 
 vertices_led_body = [-hl_led,-hw_led,0; hl_led,-hw_led,0; hl_led,hw_led,0; -hl_led,hw_led,0; -hl_led,-hw_led,hh_led_device; hl_led,-hw_led,hh_led_device; hl_led,hw_led,hh_led_device; -hl_led,hw_led,hh_led_device];
 faces_led_body = [1,2,3,4; 5,6,7,8; 1,2,6,5; 2,3,7,6; 3,4,8,7; 4,1,5,8];
 patch('Vertices', vertices_led_body, 'Faces', faces_led_body, 'FaceColor', [0.75,0.75,0.85], 'EdgeColor','k', 'FaceAlpha',0.15, 'LineWidth',1); 
 hold on;
 
-% 7.2 绘制长方体光源
 src_center_z_offset = src_half_dim; 
 src_red_center_pos = [-source_distance/2, 0, src_center_z_offset]; 
 src_blue_center_pos = [source_distance/2, 0, src_center_z_offset];
@@ -209,7 +205,6 @@ h_patch_blue_src = patch('Vertices',v_blue_src,'Faces',src_faces_cuboid,'FaceCol
 % 7.3 绘制组织层体积
 layer_plane_xy_half_size = max(led_length, led_width) * 0.9; 
 
-% 定义一个函数来创建层体积的顶点和面
 function [V, F] = create_layer_volume(z_bottom, z_top, xy_half_size)
     V = [
         -xy_half_size, -xy_half_size, z_bottom; xy_half_size, -xy_half_size, z_bottom;
@@ -274,7 +269,6 @@ sources_center_pos_for_emission = {src_red_center_pos, src_blue_center_pos};
 base_colors = {color_red_source, color_blue_source};
 source_names = {'红光', '蓝光'};
 
-% --- 辅助函数：生成粒子云 ---
 function [px, py, pz, h_scatter, legend_flag_updated] = generate_particle_cloud( ...
     num_particles, start_z_layer, layer_thickness_current, emission_center_xy, ...
     angle_spread, particle_color, particle_size, particle_alpha, marker, ...
@@ -317,7 +311,6 @@ function [px, py, pz, h_scatter, legend_flag_updated] = generate_particle_cloud(
         'filled', 'MarkerFaceAlpha', particle_alpha, 'MarkerEdgeAlpha', particle_alpha*0.7, ...
         'DisplayName', current_disp_name);
 end
-% --- 结束辅助函数 ---
 
 for src_idx = 1:length(sources_center_pos_for_emission)
     current_source_emission_origin = sources_center_pos_for_emission{src_idx}; 
@@ -325,7 +318,7 @@ for src_idx = 1:length(sources_center_pos_for_emission)
     current_source_name = source_names{src_idx};
     emission_center_xy_on_led_surface = [current_source_emission_origin(1), current_source_emission_origin(2)];
 
-    % 阶段1: 空气层
+
     num_p_air = round(max_initial_particles_per_source * (total_intensity_after_air / total_intensity_led_surface));
     current_legend_flag_air = ifthen(src_idx==1, plotted_legend_particles_air_red, plotted_legend_particles_air_blue);
     if thickness_air > 1e-4 
@@ -336,7 +329,6 @@ for src_idx = 1:length(sources_center_pos_for_emission)
         if ~isempty(get(h_scatter_air,'DisplayName')) && isgraphics(h_scatter_air), legend_handles(end+1)=h_scatter_air; legend_labels{end+1}=get(h_scatter_air,'DisplayName'); end
     end
 
-    % 阶段2: 皮肤层内
     num_p_skin = round(max_initial_particles_per_source * (total_intensity_after_skin / total_intensity_led_surface));
     current_legend_flag_skin = ifthen(src_idx==1, plotted_legend_particles_skin_red, plotted_legend_particles_skin_blue);
      if thickness_skin > 1e-4
@@ -347,7 +339,6 @@ for src_idx = 1:length(sources_center_pos_for_emission)
         if ~isempty(get(h_scatter_skin,'DisplayName')) && isgraphics(h_scatter_skin), legend_handles(end+1)=h_scatter_skin; legend_labels{end+1}=get(h_scatter_skin,'DisplayName'); end
      end
     
-    % 阶段3: 肌肉层内
     num_p_muscle = round(max_initial_particles_per_source * (total_intensity_entering_vessel / total_intensity_led_surface));
     current_legend_flag_muscle = ifthen(src_idx==1, plotted_legend_particles_muscle_red, plotted_legend_particles_muscle_blue);
     if thickness_muscle > 1e-4
@@ -358,7 +349,6 @@ for src_idx = 1:length(sources_center_pos_for_emission)
         if ~isempty(get(h_scatter_muscle,'DisplayName')) && isgraphics(h_scatter_muscle), legend_handles(end+1)=h_scatter_muscle; legend_labels{end+1}=get(h_scatter_muscle,'DisplayName'); end
     end
     
-    % 阶段4: 血管层内
     num_p_vessel = round(max_initial_particles_per_source * (total_intensity_exiting_vessel / total_intensity_led_surface)); % Particles remaining after vessel
     current_legend_flag_vessel = ifthen(src_idx==1, plotted_legend_particles_vessel_red, plotted_legend_particles_vessel_blue);
     if thickness_vessel > 1e-4
@@ -370,7 +360,6 @@ for src_idx = 1:length(sources_center_pos_for_emission)
     end
 end
 
-% 7.5 添加文字标注衰减信息
 text_z_offset = 0.05; 
 intensity_initial_red_led_exit = spectrum_after_led_surface(idx_red_peak); 
 intensity_initial_blue_led_exit = spectrum_after_led_surface(idx_blue_peak);
@@ -397,7 +386,6 @@ text(-layer_plane_xy_half_size*0.9, layer_plane_xy_half_size*0.9, z_vessel_end_a
     'Color', 'k', 'FontSize', 8, 'BackgroundColor', [1,1,1,0.6], 'EdgeColor', 'k', 'HorizontalAlignment', 'left');
 
 
-% 7.6 3D图形修饰
 title('LED发光及在组织层中衰减的3D示意图 (分层粒子云与体积渲染)', 'FontSize', 16, 'FontWeight','bold'); 
 xlabel('X (cm)', 'FontSize', 13); ylabel('Y (cm)', 'FontSize', 13); zlabel('Z (cm, 深度)', 'FontSize', 13);
 axis equal; grid on; view(35, 30); rotate3d on; 
@@ -438,7 +426,6 @@ disp('多层组织衰减分析和3D可视化完成。');
 disp('图形窗口1: 光谱衰减图');
 disp('图形窗口2: 3D LED发光及组织层示意图 (分层粒子云与体积渲染)');
 
-% 辅助的 ifthen 函数 (MATLAB R2021a 及以后版本内置，旧版本可能需要)
 function result = ifthen(condition, true_val, false_val)
     if condition
         result = true_val;
